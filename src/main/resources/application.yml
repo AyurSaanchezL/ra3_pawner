@@ -1,0 +1,55 @@
+server:
+  port: 8083 # RA1=8081, RA2=8082, RA3=8083
+
+spring:
+  main:
+    web-application-type: servlet
+    banner-mode: off
+  application:
+    name: mcp-server-ra3-hibernate
+
+  # Configuración de base de datos MySQL - Por favor, completa los siguientes datos:
+  datasource:
+    # Reemplaza 'localhost' por la IP de tu servidor de BBDD si es necesario, '3306' por el puerto de tu BBDD y
+    # 'pawner_db' por el nombre que le quieras dar a tu BBDD
+    url: jdbc:mysql://localhost:3306/pawner_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ayur # Reemplaza 'tu_usuario' por tu nombre de usuario de MySQL
+    password: 1234 # Reemplaza 'tu_password' por tu contraseña de MySQL
+
+
+  # ===== CONFIGURACIÓN HIBERNATE (RA3 ESPECÍFICO) =====
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update # Dejamos que Hibernate gestione el esquema
+    show-sql: true # Mostrar SQL generado por Hibernate
+    properties:
+      hibernate:
+        format_sql: true # Formatear SQL en logs
+        use_sql_comments: true # Mostrar comentarios de origen
+        highlight_sql: true # Resaltar SQL en consola
+        generate_statistics: true # Estadísticas de rendimiento
+        jdbc:
+          batch_size: 20 # Tamaño de batch para operaciones
+        order_inserts: true # Optimizar INSERTs
+        order_updates: true # Optimizar UPDATEs
+
+  # Jackson JSON
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.dam.accesodatos: DEBUG
+    org.hibernate.SQL: DEBUG # SQL queries
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE # Valores de parámetros
+    org.springframework.orm.jpa: DEBUG # JPA operations
+    org.springframework.transaction: DEBUG # Transacciones
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
