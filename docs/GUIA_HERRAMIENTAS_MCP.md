@@ -1,435 +1,200 @@
-# Guía de Herramientas MCP
+# Guía de Herramientas MCP (Mascotas)
 
-Guía práctica para usar las herramientas MCP (Model Context Protocol) del proyecto.
+Guía práctica para usar las herramientas MCP (Model Context Protocol) del proyecto para la gestión de mascotas.
 
 ## ¿Qué es MCP?
 
-**Model Context Protocol (MCP)** es un protocolo que permite a los LLMs (Large Language Models) interactuar con aplicaciones mediante "herramientas" (tools).
-
-En este proyecto, cada método del servicio Hibernate está expuesto como una herramienta MCP que puede ser invocada vía REST.
+**Model Context Protocol (MCP)** es un protocolo que permite a los LLMs (Large Language Models) interactuar con aplicaciones mediante "herramientas" (tools). En este proyecto, cada método del servicio Hibernate está expuesto como una herramienta MCP que puede ser invocada vía REST.
 
 ## Arquitectura MCP
 
 ```
 LLM/Cliente HTTP
      ↓
-REST Endpoint (/mcp/create_user)
+REST Endpoint (ej. /mcp/create_mascota)
      ↓
 McpServerController
      ↓
-HibernateUserService (método anotado con @Tool)
+HibernateMascotaService (método anotado con @Tool)
      ↓
-Hibernate/JPA → Base de Datos
+Hibernate/JPA → Base de Datos (MySQL)
 ```
 
 ## Herramientas Disponibles
 
 ### 1. test_entity_manager
 
-**Propósito:** Verificar que EntityManager de Hibernate está activo.
-
-**Cuándo usarla:** Al iniciar, para validar configuración ORM.
-
+**Propósito:** Verificar que EntityManager de Hibernate está activo y conectado.
+**Cuándo usarla:** Al iniciar, para validar la configuración del ORM y la conexión a la BD.
 **Endpoint:** `POST /mcp/test_entity_manager`
-
 **Request:** Sin body
 
 **Ejemplo curl:**
 ```bash
 curl -X POST http://localhost:8083/mcp/test_entity_manager
 ```
-
-**Response:**
-```
-"✓ EntityManager activo | Base de datos: RA3DB | Test: 1"
-```
-
-**SQL Generado:**
-```sql
-SELECT 1 as test, DATABASE() as db_name
-```
-
----
-
-### 2. create_user
-
-**Propósito:** Crear un nuevo usuario en la base de datos.
-
-**Cuándo usarla:** Para INSERT de nuevos registros.
-
-**Endpoint:** `POST /mcp/create_user`
-
-**Request:**
-```json
-{
-  "name": "Ana López",
-  "email": "ana.lopez@test.com",
-  "department": "IT",
-  "role": "Developer"
-}
-```
-
-**Ejemplo curl:**
-```bash
-curl -X POST http://localhost:8083/mcp/create_user \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Ana López",
-    "email": "ana.lopez@test.com",
-    "department": "IT",
-    "role": "Developer"
-  }'
-```
-
 **Response:**
 ```json
 {
-  "id": 100,
-  "name": "Ana López",
-  "email": "ana.lopez@test.com",
-  "department": "IT",
-  "role": "Developer",
-  "active": true,
-  "createdAt": "2025-01-15T10:30:00",
-  "updatedAt": "2025-01-15T10:30:00"
+    "tool": "test_entity_manager",
+    "result": "✓ EntityManager activo | Base de datos: pawner_db | Test: 1",
+    "status": "success"
 }
-```
-
-**SQL Generado:**
-```sql
-INSERT INTO users (name, email, department, role, active, created_at, updated_at)
-VALUES ('Ana López', 'ana.lopez@test.com', 'IT', 'Developer', true, ...)
 ```
 
 ---
 
-### 3. find_user_by_id
 
-**Propósito:** Buscar un usuario por su ID.
+### 2. create_mascota
 
-**Cuándo usarla:** Para SELECT por clave primaria.
-
-**Endpoint:** `POST /mcp/find_user_by_id`
+**Propósito:** Crear una nueva mascota en la base de datos.
+**Cuándo usarla:** Para insertar nuevos registros.
+**Endpoint:** `POST /mcp/create_mascota`
 
 **Request:**
 ```json
 {
-  "id": 1
+  "numChip": 12345,
+  "nombre": "Fido",
+  "tipoMascota": "Perro",
+  "edad": 5,
+  "sexo": "Macho"
 }
 ```
 
 **Ejemplo curl:**
 ```bash
-curl -X POST http://localhost:8083/mcp/find_user_by_id \
+curl -X POST http://localhost:8083/mcp/create_mascota \
   -H "Content-Type: application/json" \
-  -d '{"id": 1}'
+  -d '{"numChip": 12345, "nombre": "Fido", "tipoMascota": "Perro", "edad": 5, "sexo": "Macho"}'
 ```
 
-**Response (encontrado):**
-```json
-{
-  "id": 1,
-  "name": "Juan Pérez",
-  "email": "juan.perez@empresa.com",
-  ...
-}
-```
+**Response:** El objeto de la mascota creada.
 
-**Response (no encontrado):**
-```json
-null
-```
 
----
+### 3. find_mascota_by_id
 
-### 4. update_user
-
-**Propósito:** Actualizar campos de un usuario existente.
-
-**Cuándo usarla:** Para UPDATE de registros.
-
-**Endpoint:** `POST /mcp/update_user`
+**Propósito:** Buscar una mascota por su número de chip (ID).
+**Cuándo usarla:** Para `SELECT` por clave primaria.
+**Endpoint:** `POST /mcp/find_mascota_by_id`
 
 **Request:**
 ```json
 {
-  "id": 1,
-  "name": "Juan Pérez Actualizado",
-  "department": "Management"
+  "mascotaId": 12345
 }
 ```
 
 **Ejemplo curl:**
 ```bash
-curl -X POST http://localhost:8083/mcp/update_user \
+curl -X POST http://localhost:8083/mcp/find_mascota_by_id \
   -H "Content-Type: application/json" \
-  -d '{
-    "id": 1,
-    "name": "Juan Pérez Actualizado",
-    "department": "Management"
-  }'
+  -d '{"mascotaId": 12345}'
 ```
+**Response (encontrado):** El objeto de la mascota encontrada.
+**Response (no encontrado):** `null`.
 
-**Response:** Usuario completo actualizado
 
-**Nota:** Solo incluye campos a modificar (UPDATE parcial).
+### 4. update_mascota (TODO)
 
----
+**Propósito:** Actualizar campos de una mascota existente.
+**Estado:** ⚠️ TODO - El endpoint no está implementado en el controlador. El servicio sí tiene un método `updateMascota` para implementar.
 
-### 5. delete_user (TODO)
 
-**Propósito:** Eliminar un usuario por ID.
+### 5. delete_mascota (TODO)
 
-**Estado:** ⚠️ TODO - Debe ser implementado por el estudiante
+**Propósito:** Eliminar una mascota por su ID.
+**Estado:** ⚠️ TODO - El endpoint no está implementado en el controlador. El servicio sí tiene un método `deleteMascota` para implementar.
 
-**Endpoint:** `POST /mcp/delete_user`
 
-**Request esperado:**
-```json
-{
-  "id": 100
-}
-```
+### 6. find_all_mascotas
 
-**Response esperado:**
-```json
-true  // o false si no existía
-```
-
----
-
-### 6. find_all_users
-
-**Propósito:** Obtener todos los usuarios.
-
-**Cuándo usarla:** Para SELECT * (listado completo).
-
-**Endpoint:** `POST /mcp/find_all_users`
-
+**Propósito:** Obtener una lista de todas las mascotas.
+**Cuándo usarla:** Para un listado completo (`SELECT *`).
+**Endpoint:** `POST /mcp/find_all_mascotas`
 **Request:** Sin body
 
 **Ejemplo curl:**
 ```bash
-curl -X POST http://localhost:8083/mcp/find_all_users
+curl -X POST http://localhost:8083/mcp/find_all_mascotas
 ```
+**Response:** Un array con todas las mascotas.
 
-**Response:**
-```json
-[
-  {"id": 1, "name": "Juan Pérez", ...},
-  {"id": 2, "name": "María García", ...},
-  ...
-]
-```
 
----
+### 7. find_mascotas_by_tipo
 
-### 7. find_users_by_department
-
-**Propósito:** Buscar usuarios activos de un departamento.
-
-**Cuándo usarla:** Para consultas con filtro JPQL.
-
-**Endpoint:** `POST /mcp/find_users_by_department`
+**Propósito:** Buscar mascotas de un tipo específico.
+**Cuándo usarla:** Para consultas con filtro (`WHERE`).
+**Endpoint:** `POST /mcp/find_mascotas_by_tipo`
 
 **Request:**
 ```json
 {
-  "department": "IT"
+  "tipo": "Perro"
 }
 ```
 
 **Ejemplo curl:**
 ```bash
-curl -X POST http://localhost:8083/mcp/find_users_by_department \
+curl -X POST http://localhost:8083/mcp/find_mascotas_by_tipo \
   -H "Content-Type: application/json" \
-  -d '{"department": "IT"}'
+  -d '{"tipo": "Perro"}'
 ```
+**Response:** Un array de mascotas que coinciden con el tipo.
+**JPQL Usado:** `SELECT m FROM Mascota m WHERE m.tipoMascota = :tipo`
 
-**Response:** Array de usuarios del departamento IT
 
-**JPQL Usado:**
-```java
-SELECT u FROM User u WHERE u.department = :dept AND u.active = true ORDER BY u.name
-```
+### 8. search_mascotas (TODO)
 
----
+**Propósito:** Búsqueda con múltiples filtros opcionales.
+**Estado:** ⚠️ TODO - El endpoint no está implementado. El servicio tiene un método `searchMascotas` para implementar.
 
-### 8. search_users (TODO)
-
-**Propósito:** Búsqueda dinámica con múltiples filtros opcionales.
-
-**Estado:** ⚠️ TODO - Debe ser implementado por el estudiante
-
-**Endpoint:** `POST /mcp/search_users`
-
-**Request esperado:**
-```json
-{
-  "department": "IT",
-  "role": "Developer",
-  "active": true
-}
-```
-
-**Response esperado:** Array de usuarios que cumplen todos los filtros
-
-**JPQL esperado:**
-```java
-SELECT u FROM User u WHERE 1=1 AND u.department = :dept AND u.role = :role AND u.active = :active
-```
-
----
 
 ### 9. transfer_data (TODO)
 
-**Propósito:** Insertar múltiples usuarios en una transacción atómica.
+**Propósito:** Insertar múltiples mascotas en una transacción atómica.
+**Estado:** ⚠️ TODO - El endpoint no está implementado. El servicio tiene un método `transferData` para implementar.
 
-**Estado:** ⚠️ TODO - Debe ser implementado por el estudiante
 
-**Endpoint:** `POST /mcp/transfer_data`
+### 10. execute_count_by_tipo (TODO)
 
-**Request esperado:**
-```json
-{
-  "users": [
-    {"name": "User 1", "email": "user1@test.com", "department": "IT", "role": "Dev"},
-    {"name": "User 2", "email": "user2@test.com", "department": "HR", "role": "Manager"}
-  ]
-}
-```
+**Propósito:** Contar mascotas de un tipo específico.
+**Estado:** ⚠️ TODO - El endpoint no está implementado. El servicio tiene un método `executeCountByTipo` para implementar.
 
-**Response esperado:**
-```json
-true
-```
-
-**Comportamiento:** Si uno falla, todos hacen rollback (atomicidad).
-
----
-
-### 10. execute_count_by_department (TODO)
-
-**Propósito:** Contar usuarios activos de un departamento.
-
-**Estado:** ⚠️ TODO - Debe ser implementado por el estudiante
-
-**Endpoint:** `POST /mcp/execute_count_by_department`
-
-**Request esperado:**
-```json
-{
-  "department": "IT"
-}
-```
-
-**Response esperado:**
-```json
-3
-```
-
-**JPQL esperado:**
-```java
-SELECT COUNT(u) FROM User u WHERE u.department = :dept AND u.active = true
-```
-
----
 
 ## Cómo Funciona el Registro de Herramientas
 
 ### McpToolRegistry
-
-**Archivo:** `src/main/java/com/dam/accesodatos/mcp/McpToolRegistry.java`
-
-```java
-@Component
-public class McpToolRegistry {
-    @PostConstruct
-    public void scanTools() {
-        // Escanea métodos anotados con @Tool
-        // Registra en lista de herramientas MCP
-    }
-
-    public List<McpToolInfo> getRegisteredTools() {
-        return registeredTools;
-    }
-}
-```
+El componente `McpToolRegistry` escanea la aplicación al arrancar en busca de métodos anotados con `@Tool` y los registra para que puedan ser listados por el endpoint `/tools`.
 
 ### Anotación @Tool
-
-**Archivo:** `src/main/java/org/springframework/ai/mcp/server/annotation/Tool.java`
-
-```java
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Tool {
-    String name();
-    String description();
-}
-```
+Permite definir un nombre y descripción para un método de servicio, convirtiéndolo en una "herramienta" MCP.
 
 **Uso:**
 ```java
-@Tool(name = "create_user", description = "Persiste un nuevo usuario...")
-public User createUser(UserCreateDto dto) {
-    // ...
-}
+// En HibernateMascotaService.java
+@Tool(name = "create_mascota", description = "Persiste una nueva mascota...")
+Mascota createMascota(MascotaCreateDto dto);
 ```
 
 ### McpServerController
-
-**Archivo:** `src/main/java/com/dam/accesodatos/mcp/McpServerController.java`
-
-Expone endpoints REST para cada herramienta:
+Expone los endpoints REST que invocan a los métodos del servicio correspondientes.
 
 ```java
 @RestController
 @RequestMapping("/mcp")
 public class McpServerController {
-    @GetMapping("/tools")
-    public Map<String, Object> getTools() {
-        // Lista todas las herramientas registradas
+    @PostMapping("/create_mascota")
+    public ResponseEntity<Map<String, Object>> createMascota(@RequestBody MascotaCreateDto dto) {
+        Mascota mascota = hibernateMascotaService.createMascota(dto);
+        // ... empaquetar y devolver respuesta
     }
-
-    @PostMapping("/create_user")
-    public User createUser(@RequestBody UserCreateDto dto) {
-        return service.createUser(dto);
-    }
-
     // ... más endpoints
 }
 ```
 
 ---
 
-## Agregar una Nueva Herramienta MCP
-
-1. **Definir método en HibernateUserService:**
-```java
-@Tool(name = "mi_nueva_tool", description = "Descripción...")
-MyResult miNuevoMetodo(MyDto dto);
-```
-
-2. **Implementar en HibernateUserServiceImpl:**
-```java
-@Override
-public MyResult miNuevoMetodo(MyDto dto) {
-    // Implementación Hibernate/JPA
-}
-```
-
-3. **Agregar endpoint en McpServerController:**
-```java
-@PostMapping("/mi_nueva_tool")
-public MyResult miNuevaTool(@RequestBody MyDto dto) {
-    return service.miNuevoMetodo(dto);
-}
-```
-
-4. **Reiniciar aplicación** - La herramienta se registra automáticamente
-
----
 
 ## Testing de Herramientas MCP
 
@@ -442,22 +207,16 @@ curl http://localhost:8083/mcp/health
 # Listar herramientas
 curl http://localhost:8083/mcp/tools
 
-# Probar herramienta
-curl -X POST http://localhost:8083/mcp/create_user \
+# Probar la creación de una mascota
+curl -X POST http://localhost:8083/mcp/create_mascota \
   -H "Content-Type: application/json" \
-  -d '{"name": "Test", "email": "test@example.com", "department": "IT", "role": "Tester"}'
+  -d '{"numChip": 999, "nombre": "Tester", "tipoMascota": "Gato"}'
 ```
 
-### Desde Postman
-
-1. Importar colección (crear archivo `mcp-hibernate.postman_collection.json`)
-2. Configurar base URL: `http://localhost:8083/mcp`
-3. Crear requests para cada herramienta
-
-### Desde Tests Java
-
-Ver [TESTING_GUIA.md](TESTING_GUIA.md) para tests de integración.
+### Desde Postman o Insomnia
+Puedes usar cualquier cliente REST para probar los endpoints. Configura la URL base a `http://localhost:8083/mcp` y crea peticiones `POST` con los cuerpos (JSON) correspondientes.
 
 ---
 
-Para más información técnica, consulta [API_REFERENCIA.md](API_REFERENCIA.md).
+
+Para más detalles técnicos de cada endpoint, consulta [API_REFERENCIA.md](API_REFERENCIA.md).

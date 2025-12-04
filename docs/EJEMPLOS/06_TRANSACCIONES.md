@@ -1,77 +1,90 @@
-# Ejemplo 6: Transacciones con @Transactional
+# Ejemplo 6: Transacciones con `@Transactional`
 
-## Objetivo
-Insertar múltiples usuarios en una transacción atómica (todo o nada).
+Este ejemplo ilustra cómo Hibernate y Spring gestionan la atomicidad de las operaciones a través de la anotación `@Transactional`.
 
-## Código (TODO - Implementa tú)
+## Atomicidad: O todo o nada
+
+Una transacción es una secuencia de operaciones que se ejecutan como una única unidad lógica. La propiedad más importante de una transacción es la **atomicidad**: o se completan **todas** las operaciones con éxito, o **ninguna** de ellas tiene efecto.
+
+**Escenario:** Queremos guardar una lista de varias mascotas. Si una de ellas falla (por ejemplo, por tener un `numChip` duplicado), no debería guardarse ninguna de las otras.
+
+## 1. Lógica del Servicio (`transferData`)
+
+El método `transferData` intenta persistir una lista de mascotas. La magia ocurre gracias a `@Transactional`.
 
 ```java
+// HibernateMascotaServiceImpl.java
 @Override
 @Transactional
-public boolean transferData(List<User> users) {
-    for (User user : users) {
-        entityManager.persist(user);
+public boolean transferData(List<Mascota> mascotas) {
+    // La anotación @Transactional inicia la transacción aquí.
+    
+    for (Mascota mascota : mascotas) {
+        entityManager.persist(mascota);
+        // Hibernate añade cada mascota al contexto de persistencia,
+        // pero aún no ejecuta los INSERTs.
     }
-    return true;
-    // Spring hace COMMIT automáticamente si todo OK
-    // Spring hace ROLLBACK automáticamente si hay excepción
+    
+    return true; 
+    
+    // Al salir del método sin errores, Spring ordena a Hibernate
+    // hacer COMMIT. En este punto, se ejecutan todos los INSERTs.
 }
 ```
 
-## Comportamiento Transaccional
+**Conceptos Clave:**
+- **`@Transactional`**: Esta anotación le dice a Spring que envuelva la ejecución de este método en una transacción de base de datos.
+- **`BEGIN TRANSACTION`**: Spring la inicia antes de que se ejecute la primera línea del método.
+- **`COMMIT`**: Si el método termina y devuelve un valor sin lanzar una excepción, Spring ordena un `COMMIT`. Todos los cambios se hacen permanentes en la base de datos.
+- **`ROLLBACK`**: Si el método lanza una `RuntimeException` (o cualquier `Exception` no controlada), Spring ordena un `ROLLBACK`. Todos los cambios hechos dentro del método se deshacen, como si nunca hubieran ocurrido.
 
-**Caso 1: Todos los persist() exitosos**
-```
-BEGIN TRANSACTION
-  INSERT user 1
-  INSERT user 2
-  INSERT user 3
-COMMIT  ← Spring automático
-```
+## 2. Simulación de un Error
 
-**Caso 2: Uno falla (email duplicado)**
-```
-BEGIN TRANSACTION
-  INSERT user 1  ← OK
-  INSERT user 2  ← FALLA (email duplicado)
-ROLLBACK  ← Spring automático (ninguno se inserta)
-```
-
-## Comparación RA2 vs RA3
-
-### RA2 (JDBC Manual)
+Imaginemos que intentamos insertar dos mascotas, pero la segunda tiene un `numChip` que ya existe en la base de datos, lo que viola una `PRIMARY KEY constraint`.
 
 ```java
-conn.setAutoCommit(false);
+// En un test...
+List<Mascota> mascotas = Arrays.asList(
+    new Mascota(99998, "Mascota Buena", "Perro", 2, "Macho", ""),
+    new Mascota(12345, "Mascota Mala", "Gato", 1, "Hembra", "") // <-- numChip 12345 ya existe
+);
+
 try {
-    for (User user : users) {
-        ps.setString(1, user.getName());
-        // ...
-        ps.executeUpdate();
-    }
-    conn.commit();  // ← Manual
+    service.transferData(mascotas);
 } catch (Exception e) {
-    conn.rollback();  // ← Manual
+    // La excepción (ej. PersistenceException) será capturada aquí.
 }
+
+// Verificación:
+Mascota mascotaBuena = service.findMascotaById(99998);
+assertNull(mascotaBuena); // <-- Correcto, la primera mascota TAMPOCO se guardó.
 ```
 
-### RA3 (Spring Automático)
+**Flujo del Error:**
+1.  `@Transactional` inicia la transacción.
+2.  `persist(mascotaBuena)`: Se añade al contexto, todo OK.
+3.  `persist(mascotaMala)`: Se añade al contexto.
+4.  El método termina. Spring intenta hacer `COMMIT`.
+5.  Hibernate envía los `INSERT` a la base de datos. El segundo `INSERT` falla por clave duplicada.
+6.  La base de datos devuelve un error.
+7.  Hibernate envuelve este error en una `PersistenceException`.
+8.  Como se ha lanzado una excepción, Spring ordena un **`ROLLBACK`** en lugar de `COMMIT`.
+9.  La base de datos deshace el primer `INSERT`.
+10. El resultado final es que la tabla `mascotas` queda exactamente como estaba antes de llamar al método. Se ha garantizado la atomicidad.
 
+## Comparación con JDBC (RA2)
+Con JDBC, tendrías que manejar la transacción manualmente:
 ```java
-@Transactional
-public boolean transferData(List<User> users) {
-    for (User user : users) {
-        entityManager.persist(user);
-    }
-    return true;
-    // Spring maneja commit/rollback automáticamente
+Connection conn = ...;
+conn.setAutoCommit(false); // <-- Desactivar autocommit
+try {
+    // Bucle con PreparedStatement...
+    // ...
+    conn.commit(); // <-- Commit manual
+} catch (SQLException e) {
+    conn.rollback(); // <-- Rollback manual
+} finally {
+    conn.setAutoCommit(true); // Restaurar estado
 }
 ```
-
-## Conceptos Clave
-
-- **Atomicidad**: O se insertan todos o ninguno
-- **@Transactional**: Spring maneja BEGIN, COMMIT, ROLLBACK
-- **Rollback automático**: Si hay excepción, Spring revierte todos los cambios
-
-Ver [GUIA_ESTUDIANTE.md](../GUIA_ESTUDIANTE.md#53-todo-3-transferdata---transacción-múltiple).
+Con Spring y Hibernate, la anotación `@Transactional` se encarga de toda esta lógica compleja, haciendo el código mucho más limpio y seguro.

@@ -10,8 +10,8 @@
 │  │       McpServerController                    │        │
 │  │  GET  /mcp/health                            │        │
 │  │  GET  /mcp/tools                             │        │
-│  │  POST /mcp/create_user                       │        │
-│  │  POST /mcp/find_user_by_id                   │        │
+│  │  POST /mcp/create_mascota                    │        │
+│  │  POST /mcp/find_mascota_by_id                │        │
 │  │  ...                                         │        │
 │  └─────────────────────────────────────────────┘        │
 └──────────────────────┬──────────────────────────────────┘
@@ -20,17 +20,17 @@
 │                    CAPA DE SERVICIO                      │
 │  (Lógica de Negocio + ORM)                              │
 │  ┌─────────────────────────────────────────────┐        │
-│  │    HibernateUserServiceImpl                  │        │
+│  │    HibernateMascotaServiceImpl               │        │
 │  │  @Service                                    │        │
 │  │  @Transactional(readOnly=true)               │        │
 │  │                                              │        │
 │  │  + testEntityManager()                       │        │
-│  │  + createUser() @Transactional               │        │
-│  │  + findUserById()                            │        │
-│  │  + updateUser() @Transactional               │        │
-│  │  + deleteUser() @Transactional               │        │
+│  │  + createMascota() @Transactional            │        │
+│  │  + findMascotaById()                         │        │
+│  │  + updateMascota() @Transactional (TODO)     │        │
+│  │  + deleteMascota() @Transactional (TODO)     │        │
 │  │  + findAll()                                 │        │
-│  │  + findUsersByDepartment()                   │        │
+│  │  + findMascotasByTipo()                      │        │
 │  │  ...                                         │        │
 │  └─────────────────────────────────────────────┘        │
 └──────────────────────┬──────────────────────────────────┘
@@ -39,12 +39,12 @@
 │                CAPA DE PERSISTENCIA                      │
 │  (JPA/Hibernate)                                        │
 │  ┌──────────────────┐       ┌────────────────────┐      │
-│  │  EntityManager   │       │  UserRepository    │      │
+│  │  EntityManager   │       │  MascotaRepository │      │
 │  │  (JPA)           │       │  (Spring Data JPA) │      │
 │  │                  │       │                    │      │
 │  │  persist()       │       │  findAll()         │      │
-│  │  find()          │       │  findByDepartment()│      │
-│  │  merge()         │       │  findByEmail()     │      │
+│  │  find()          │       │  findByTipoMascota()│      │
+│  │  merge()         │       │  findBySexo()      │      │
 │  │  remove()        │       │  ...               │      │
 │  │  createQuery()   │       │                    │      │
 │  └──────────────────┘       └────────────────────┘      │
@@ -54,24 +54,24 @@
 │                   CAPA DE MODELO                         │
 │  (Entidades JPA)                                        │
 │  ┌─────────────────────────────────────────────┐        │
-│  │  @Entity User                                │        │
-│  │  @Table(name = "users")                      │        │
+│  │  @Entity Mascota                             │        │
+│  │  @Table(name = "mascotas")                   │        │
 │  │                                              │        │
-│  │  @Id Long id                                 │        │
-│  │  @Column String name                         │        │
-│  │  @Column String email                        │        │
+│  │  @Id int numChip                             │        │
+│  │  @Column String nombre                       │        │
+│  │  @Column String tipoMascota                  │        │
 │  │  ...                                         │        │
 │  └─────────────────────────────────────────────┘        │
 └──────────────────────┬──────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────────────┐
-│                BASE DE DATOS (H2)                        │
-│  jdbc:h2:mem:ra3db                                      │
+│              BASE DE DATOS (MySQL)                       │
+│  jdbc:mysql://localhost:3306/pawner_db                  │
 │                                                         │
-│  TABLE users (                                          │
-│    id BIGINT PRIMARY KEY AUTO_INCREMENT,                │
-│    name VARCHAR(50),                                    │
-│    email VARCHAR(100) UNIQUE,                           │
+│  TABLE mascotas (                                       │
+│    num_chip INT PRIMARY KEY,                             │
+│    nombre VARCHAR(50),                                   │
+│    tipo_mascota VARCHAR(50),                             │
 │    ...                                                  │
 │  )                                                      │
 └─────────────────────────────────────────────────────────┘
@@ -82,11 +82,11 @@
 ### 1. Repository Pattern
 
 ```
-HibernateUserServiceImpl
+HibernateMascotaServiceImpl
         ↓
-  UserRepository (interface)
+  MascotaRepository (interface)
         ↓
-  JpaRepository<User, Long> (Spring Data)
+  JpaRepository<Mascota, Integer> (Spring Data)
         ↓
   Implementación automática por Spring
 ```
@@ -112,19 +112,19 @@ Controller → Service (interface) → ServiceImpl
 ```
 HTTP Request (JSON)
      ↓
-UserCreateDto (validaciones)
+MascotaCreateDto (validaciones)
      ↓
 Service (mapeo a Entity)
      ↓
-User (entity)
+Mascota (entity)
      ↓
 EntityManager.persist()
 ```
 
 **DTOs usados:**
-- `UserCreateDto`: Crear usuarios
-- `UserUpdateDto`: Actualizar (campos opcionales)
-- `UserQueryDto`: Búsquedas con filtros
+- `MascotaCreateDto`: Crear mascotas
+- `MascotaUpdateDto`: Actualizar (campos opcionales)
+- `MascotaQueryDto`: Búsquedas con filtros
 
 **Beneficios:**
 - Separación de API externa vs modelo interno
@@ -137,12 +137,12 @@ EntityManager.persist()
 
 ```java
 @Service
-public class HibernateUserServiceImpl {
+public class HibernateMascotaServiceImpl {
     @PersistenceContext
     private EntityManager entityManager;  // ← Inyectado por Spring
 
     @Autowired
-    private UserRepository userRepository;  // ← Inyectado por Spring
+    private MascotaRepository mascotaRepository;  // ← Inyectado por Spring
 }
 ```
 
@@ -153,20 +153,20 @@ public class HibernateUserServiceImpl {
 
 ## Flujo de una Solicitud
 
-### Ejemplo: `POST /mcp/create_user`
+### Ejemplo: `POST /mcp/create_mascota`
 
 ```
 1. HTTP Request (JSON)
    ↓
-2. McpServerController.createUser(@RequestBody UserCreateDto dto)
+2. McpServerController.createMascota(@RequestBody MascotaCreateDto dto)
    ↓
 3. Validación del DTO (Bean Validation)
    ↓
-4. service.createUser(dto)
+4. service.createMascota(dto)
    ↓
-5. HibernateUserServiceImpl.createUser()
-   - Crear objeto User
-   - entityManager.persist(user)
+5. HibernateMascotaServiceImpl.createMascota()
+   - Crear objeto Mascota
+   - entityManager.persist(mascota)
    ↓
 6. Hibernate genera SQL INSERT
    ↓
@@ -174,11 +174,11 @@ public class HibernateUserServiceImpl {
    ↓
 8. Hibernate ejecuta INSERT en BD
    ↓
-9. Hibernate setea ID generado en el objeto
+9. Hibernate setea ID generado en el objeto (si aplica)
    ↓
-10. Retornar User al controller
+10. Retornar Mascota al controller
     ↓
-11. Jackson serializa User a JSON
+11. Jackson serializa Mascota a JSON
     ↓
 12. HTTP Response 200 OK (JSON)
 ```
@@ -190,62 +190,35 @@ public class HibernateUserServiceImpl {
 ```java
 @Service
 @Transactional(readOnly = true)  // Default para toda la clase
-public class HibernateUserServiceImpl {
+public class HibernateMascotaServiceImpl {
 
     @Transactional  // Sobrescribe: readOnly=false
-    public User createUser(UserCreateDto dto) {
+    public Mascota createMascota(MascotaCreateDto dto) {
         // Operación de escritura
     }
 
-    public User findUserById(Long id) {
+    public Mascota findMascotaById(Integer id) {
         // Usa transacción readOnly del nivel de clase
     }
 }
 ```
 
-### Propagación de Transacciones
-
-```
-Controller (sin @Transactional)
-   ↓
-Service.method1() @Transactional  ← INICIA transacción
-   ↓
-Service.method2() @Transactional  ← PARTICIPA en misma transacción
-   ↓
-COMMIT/ROLLBACK
-```
-
-### Spring Transaction Manager
-
-```
-Antes del método:
-  1. BEGIN TRANSACTION
-
-Durante el método:
-  2. Ejecutar lógica
-  3. Hibernate acumula cambios (dirty checking)
-
-Al finalizar:
-  - Si éxito: COMMIT (persiste cambios)
-  - Si excepción: ROLLBACK (revierte cambios)
-```
-
 ## Componentes Principales
 
-### 1. User (Entidad)
+### 1. Mascota (Entidad)
 
-**Archivo:** `src/main/java/com/dam/accesodatos/model/User.java`
+**Archivo:** `src/main/java/com/dam/accesodatos/model/Mascota.java`
 
 ```java
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "mascotas")
+public class Mascota {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "num_chip")
+    private int numChip;
 
-    @Column(nullable = false, length = 50)
-    private String name;
+    @Column(name = "nombre", nullable = false)
+    private String nombre;
 
     // ... campos
 }
@@ -253,43 +226,31 @@ public class User {
 
 **Responsabilidad:** Mapeo objeto-relacional
 
-### 2. UserRepository
+### 2. MascotaRepository
 
-**Archivo:** `src/main/java/com/dam/accesodatos/repository/UserRepository.java`
+**Archivo:** `src/main/java/com/dam/accesodatos/repository/MascotaRepository.java`
 
 ```java
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    List<User> findByDepartment(String department);
-    User findByEmail(String email);
+public interface MascotaRepository extends JpaRepository<Mascota, Integer> {
+    List<Mascota> findByTipoMascota(String tipoMascota);
+    List<Mascota> findBySexo(String sexo);
 }
 ```
 
 **Responsabilidad:** Acceso a datos con Spring Data JPA
 
-### 3. HibernateUserService (Interface)
+### 3. HibernateMascotaService (Interface)
 
-**Archivo:** `src/main/java/com/dam/accesodatos/ra3/HibernateUserService.java`
+**Archivo:** `src/main/java/com/dam/accesodatos/ra3/HibernateMascotaService.java`
 
 **Responsabilidad:** Contrato de métodos (interface)
 
-### 4. HibernateUserServiceImpl
+### 4. HibernateMascotaServiceImpl
 
-**Archivo:** `src/main/java/com/dam/accesodatos/ra3/HibernateUserServiceImpl.java`
+**Archivo:** `src/main/java/com/dam/accesodatos/ra3/HibernateMascotaServiceImpl.java`
 
 **Responsabilidad:** Implementación de lógica de negocio + ORM
-
-### 5. McpServerController
-
-**Archivo:** `src/main/java/com/dam/accesodatos/mcp/McpServerController.java`
-
-**Responsabilidad:** Exponer endpoints REST/MCP
-
-### 6. McpToolRegistry
-
-**Archivo:** `src/main/java/com/dam/accesodatos/mcp/McpToolRegistry.java`
-
-**Responsabilidad:** Escanear y registrar herramientas @Tool
 
 ## Ciclo de Vida de Entidades JPA
 
@@ -310,7 +271,7 @@ DELETED (eliminado de BD)
 ```
 
 **Estados:**
-- **NEW**: Recién creado con `new User()`
+- **NEW**: Recién creado con `new Mascota()`
 - **MANAGED**: Hibernate rastreando cambios (persist, find, merge)
 - **DETACHED**: Fuera del contexto (transacción cerrada)
 - **REMOVED**: Marcado para eliminar (remove())
@@ -325,13 +286,14 @@ server:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:ra3db
-    driver-class-name: org.h2.Driver
+    url: jdbc:mysql://localhost:3306/pawner_db?createDatabaseIfNotExist=true
+    username: tu_usuario
+    password: tu_password
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
 ```
 
@@ -341,7 +303,7 @@ spring:
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
 }
 ```
 
@@ -353,4 +315,4 @@ Esta arquitectura sigue los principios de:
 - **Abstracción del acceso a datos** (Repository pattern)
 - **Gestión declarativa de transacciones** (@Transactional)
 
-Para más información, consulta [GUIA_ESTUDIANTE.md](GUIA_ESTUDIANTE.md).
+Para más información, consulta [GUIA_ESTUDIANTE.md](docs/GUIA_ESTUDIANTE.md).

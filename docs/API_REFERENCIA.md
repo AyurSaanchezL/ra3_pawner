@@ -1,6 +1,6 @@
-# API Referencia - mcp-hibernate
+# API Referencia - mcp-hibernate (Mascotas)
 
-Referencia técnica completa de los endpoints MCP y métodos del servicio.
+Referencia técnica completa de los endpoints MCP y métodos del servicio para la gestión de mascotas.
 
 ## Endpoints MCP (Base URL: http://localhost:8083/mcp)
 
@@ -9,237 +9,212 @@ Health check del servidor MCP.
 
 **Response:**
 ```json
-{"status":"UP","message":"MCP Server RA3 is running"}
+{"status":"UP","service":"MCP Server RA3 Hibernate/JPA - Mascotas"}
 ```
 
 ### GET /tools
 Lista todas las herramientas MCP disponibles.
 
-**Response:**
+**Response (Ejemplo):**
 ```json
 {
   "tools": [
-    {"name": "test_entity_manager", "description": "Prueba el EntityManager..."},
-    {"name": "create_user", "description": "Persiste un nuevo usuario..."},
-    ...
+    {"name": "test_entity_manager", "description": "Prueba la conexión con EntityManager..."},
+    {"name": "create_mascota", "description": "Persiste una nueva mascota..."},
+    {"name": "find_mascota_by_id", "description": "Busca una mascota por su número de chip..."}
   ],
-  "count": 10
+  "count": 7
 }
 ```
 
 ### POST /test_entity_manager
-Verifica conexión EntityManager.
+Verifica la conexión con `EntityManager`.
 
 **Request:** No requiere body
 
 **Response:**
 ```json
-"✓ EntityManager activo | Base de datos: RA3DB | Test: 1"
+{
+    "tool": "test_entity_manager",
+    "result": "✓ EntityManager activo | Base de datos: pawner_db | Test: 1",
+    "status": "success"
+}
 ```
 
-### POST /create_user
-Crea un nuevo usuario.
+### POST /create_mascota
+Crea una nueva mascota.
 
 **Request:**
 ```json
 {
-  "name": "Ana López",
-  "email": "ana.lopez@test.com",
-  "department": "IT",
-  "role": "Developer"
+  "numChip": 12345,
+  "nombre": "Fido",
+  "tipoMascota": "Perro",
+  "edad": 5,
+  "sexo": "Macho",
+  "otrosDetalles": "Amigable con los niños"
 }
 ```
 
 **Response:**
 ```json
 {
-  "id": 100,
-  "name": "Ana López",
-  "email": "ana.lopez@test.com",
-  "department": "IT",
-  "role": "Developer",
-  "active": true,
-  "createdAt": "2025-01-15T10:30:00",
-  "updatedAt": "2025-01-15T10:30:00"
+    "tool": "create_mascota",
+    "result": {
+        "numChip": 12345,
+        "nombre": "Fido",
+        "tipoMascota": "Perro",
+        "edad": 5,
+        "sexo": "Macho",
+        "otrosDetalles": "Amigable con los niños"
+    },
+    "status": "success"
 }
 ```
 
-**Validaciones:**
-- `name`: 2-50 caracteres, no nulo
-- `email`: formato email válido, único
-- `department`: no nulo
-- `role`: no nulo
-
-**Status Codes:**
-- 200: Usuario creado exitosamente
-- 400: Datos inválidos
-- 500: Error de servidor (ej. email duplicado)
-
-### POST /find_user_by_id
-Busca usuario por ID.
+### POST /find_mascota_by_id
+Busca una mascota por su número de chip.
 
 **Request:**
 ```json
 {
-  "id": 1
+  "mascotaId": 12345
 }
 ```
 
 **Response (encontrado):**
 ```json
 {
-  "id": 1,
-  "name": "Juan Pérez",
-  ...
+  "tool": "find_mascota_by_id",
+  "result": {
+    "numChip": 12345,
+    "nombre": "Fido",
+    ...
+  },
+  "status": "success"
 }
 ```
 
-**Response (no encontrado):**
-```json
-null
-```
+### POST /update_mascota
+**Endpoint no implementado todavía.**
 
-### POST /update_user
-Actualiza usuario existente.
+### POST /delete_mascota
+**Endpoint no implementado todavía.**
 
-**Request:**
-```json
-{
-  "id": 1,
-  "name": "Juan Pérez Actualizado",
-  "department": "Management"
-}
-```
-
-**Response:** Usuario actualizado completo
-
-**Notas:**
-- Solo envía campos a modificar (actualización parcial)
-- `id` es requerido
-- Otros campos son opcionales
-
-### POST /find_all_users
-Obtiene todos los usuarios.
+### POST /find_all_mascotas
+Obtiene una lista de todas las mascotas.
 
 **Request:** No requiere body
 
 **Response:**
 ```json
-[
-  {"id": 1, "name": "Juan Pérez", ...},
-  {"id": 2, "name": "María García", ...},
-  ...
-]
+{
+    "tool": "find_all_mascotas",
+    "result": [
+        {"numChip": 12345, "nombre": "Fido", ...},
+        {"numChip": 67890, "nombre": "Misty", ...}
+    ],
+    "count": 2,
+    "status": "success"
+}
 ```
 
-### POST /find_users_by_department
-Busca usuarios por departamento.
+### POST /find_mascotas_by_tipo
+Busca mascotas por tipo (ej. "Perro", "Gato").
 
 **Request:**
 ```json
 {
-  "department": "IT"
+  "tipo": "Perro"
 }
 ```
 
-**Response:** Array de usuarios del departamento
+**Response:** Array de mascotas del tipo especificado.
 
 ## Métodos del Servicio
 
-### HibernateUserService
-
-Todos los métodos están documentados en `src/main/java/com/dam/accesodatos/ra3/HibernateUserService.java:1`
-
+### HibernateMascotaService
+Todos los métodos están documentados en `src/main/java/com/dam/accesodatos/ra3/HibernateMascotaService.java`.
 Ver [GUIA_ESTUDIANTE.md](GUIA_ESTUDIANTE.md) para detalles de implementación.
 
 ## Modelos de Datos
 
-### User (Entidad)
+### Mascota (Entidad)
 ```java
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "mascotas")
+public class Mascota {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
+    @Column(name = "num_chip")
+    private int numChip;
+
     @Column(nullable = false, length = 50)
-    private String name;
+    private String nombre;
     
-    @Column(unique = true, nullable = false, length = 100)
-    private String email;
-    
-    @Column(nullable = false, length = 50)
-    private String department;
-    
-    @Column(nullable = false, length = 50)
-    private String role;
+    @Column(name = "tipo_mascota", nullable = false, length = 50)
+    private String tipoMascota;
     
     @Column
-    private Boolean active;
+    private int edad;
     
-    @Column
-    private LocalDateTime createdAt;
+    @Column(length = 50)
+    private String sexo;
     
-    @Column
-    private LocalDateTime updatedAt;
+    @Column(name = "otros_detalles", length = 255)
+    private String otrosDetalles;
 }
 ```
 
-### UserCreateDto
+### MascotaCreateDto
 ```java
 {
-  "name": "string (2-50 chars)",
-  "email": "string (email format)",
-  "department": "string",
-  "role": "string"
+  "numChip": "integer (requerido)",
+  "nombre": "string (requerido, 2-50 chars)",
+  "tipoMascota": "string (requerido)",
+  "edad": "integer",
+  "sexo": "string",
+  "otrosDetalles": "string"
 }
 ```
 
-### UserUpdateDto
+### MascotaUpdateDto
 ```java
 {
-  "name": "string (optional)",
-  "email": "string (optional)",
-  "department": "string (optional)",
-  "role": "string (optional)",
-  "active": "boolean (optional)"
+  "nombre": "string (opcional, 2-50 chars)",
+  "tipoMascota": "string (opcional)",
+  "edad": "integer (opcional)",
+  "sexo": "string (opcional)",
+  "otrosDetalles": "string (opcional)"
 }
 ```
 
-### UserQueryDto
+### MascotaQueryDto
 ```java
 {
-  "department": "string (optional)",
-  "role": "string (optional)",
-  "active": "boolean (optional)",
-  "limit": "integer (optional)",
-  "offset": "integer (optional)"
+  "tipoMascota": "string (opcional)",
+  "sexo": "string (opcional)",
+  "limit": "integer (opcional)",
+  "offset": "integer (opcional)"
 }
 ```
 
-## H2 Console
+## Conexión a Base de Datos MySQL
+Para examinar la base de datos, se recomienda utilizar un cliente de MySQL como **DBeaver**, **DataGrip** o **MySQL Workbench**.
 
-**URL:** http://localhost:8083/h2-console
+**Datos de conexión (por defecto):**
+- **Host**: `localhost`
+- **Puerto**: `3306`
+- **Base de Datos**: `pawner_db`
+- **Usuario**: (el que configuraste en `application.yml`)
+- **Contraseña**: (la que configuraste en `application.yml`)
 
-**Conexión:**
-- JDBC URL: `jdbc:h2:mem:ra3db`
-- User: `sa`
-- Password: *(vacío)*
-
-**Queries de ejemplo:**
+**Query de ejemplo:**
 ```sql
--- Todos los usuarios
-SELECT * FROM users;
+-- Todas las mascotas
+SELECT * FROM mascotas;
 
--- Por departamento
-SELECT * FROM users WHERE department = 'IT';
-
--- Contar por departamento
-SELECT department, COUNT(*) FROM users GROUP BY department;
-
--- Usuarios inactivos
-SELECT * FROM users WHERE active = false;
+-- Por tipo
+SELECT * FROM mascotas WHERE tipo_mascota = 'Perro';
 ```
 
 ## Error Handling
@@ -247,17 +222,10 @@ SELECT * FROM users WHERE active = false;
 **Formato de Error:**
 ```json
 {
-  "timestamp": "2025-01-15T10:30:00",
-  "status": 500,
-  "error": "Internal Server Error",
-  "message": "No se encontró usuario con ID 999",
-  "path": "/mcp/update_user"
+    "error": "Error creando mascota: ...detalle del error...",
+    "tool": "create_mascota",
+    "status": "error"
 }
 ```
-
-**Errores Comunes:**
-- `EntityNotFoundException`: Usuario no encontrado
-- `ConstraintViolationException`: Email duplicado o validación fallida
-- `DataIntegrityViolationException`: Violación de constraints de BD
 
 Para más información, consulta [GUIA_HERRAMIENTAS_MCP.md](GUIA_HERRAMIENTAS_MCP.md).
