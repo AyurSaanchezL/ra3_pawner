@@ -116,7 +116,7 @@ public class McpServerController {
 
         try {
             Integer mascotaId = ((Number) request.get("mascotaId")).intValue();
-            Mascota mascota = hibernateMascotaService.findMascotaById(mascotaId);
+            Mascota mascota = hibernateMascotaService.findMascotaByNumChip(mascotaId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("tool", "find_mascota_by_id");

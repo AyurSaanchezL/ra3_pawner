@@ -20,7 +20,7 @@ public interface HibernateMascotaService {
 
     @Tool(name = "find_mascota_by_id",
           description = "Busca una mascota por su número de chip usando EntityManager.find()")
-    Mascota findMascotaById(Integer id);
+    Mascota findMascotaByNumChip(Integer id);
 
     @Tool(name = "update_mascota",
           description = "Actualiza una mascota existente usando EntityManager.merge() y @Transactional")

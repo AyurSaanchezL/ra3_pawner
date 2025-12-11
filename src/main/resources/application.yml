@@ -17,23 +17,22 @@ spring:
     username: ayur # Reemplaza 'tu_usuario' por tu nombre de usuario de MySQL
     password: 1234 # Reemplaza 'tu_password' por tu contraseña de MySQL
 
-
   # ===== CONFIGURACIÓN HIBERNATE (RA3 ESPECÍFICO) =====
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: update # Dejamos que Hibernate gestione el esquema
-    show-sql: true # Mostrar SQL generado por Hibernate
+      ddl-auto: update           # Dejamos que Hibernate gestione el esquema
+    show-sql: true               # Mostrar SQL generado por Hibernate
     properties:
       hibernate:
-        format_sql: true # Formatear SQL en logs
-        use_sql_comments: true # Mostrar comentarios de origen
-        highlight_sql: true # Resaltar SQL en consola
-        generate_statistics: true # Estadísticas de rendimiento
+        format_sql: true              # Formatear SQL en logs
+        use_sql_comments: true        # Mostrar comentarios de origen
+        highlight_sql: true           # Resaltar SQL en consola
+        generate_statistics: true     # Estadísticas de rendimiento
         jdbc:
-          batch_size: 20 # Tamaño de batch para operaciones
-        order_inserts: true # Optimizar INSERTs
-        order_updates: true # Optimizar UPDATEs
+          batch_size: 20              # Tamaño de batch para operaciones
+        order_inserts: true           # Optimizar INSERTs
+        order_updates: true           # Optimizar UPDATEs
 
   # Jackson JSON
   jackson:

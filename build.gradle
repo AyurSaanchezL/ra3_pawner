@@ -49,9 +49,10 @@ dependencies {
     // Logging
     implementation 'org.springframework.boot:spring-boot-starter-logging'
 
-    // Testing (opcional futuro)
+    // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
