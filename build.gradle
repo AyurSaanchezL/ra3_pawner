@@ -36,7 +36,10 @@ dependencies {
     // DIFERENCIA CLAVE vs RA2: spring-boot-starter-data-jpa en lugar de spring-boot-starter-jdbc
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // Conector de MySQL
+    // Base de datos H2 embebida (desarrollo y producción)
+    runtimeOnly 'com.h2database:h2'
+    
+    // Conector de MySQL (opcional, solo si se necesita MySQL en producción)
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     // Validación (para @Entity)
@@ -52,7 +55,7 @@ dependencies {
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'com.h2database:h2'
+    // H2 ya está disponible desde runtimeOnly, no hace falta aquí
 }
 
 tasks.named('test') {

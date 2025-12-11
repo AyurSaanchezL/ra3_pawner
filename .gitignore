@@ -20,8 +20,11 @@ out/
 *.log
 application-local.yml
 
-# H2 Database
+# H2 Database files
 *.db
+*.mv.db
+*.trace.db
+data/
 
 # Java
 *.class
