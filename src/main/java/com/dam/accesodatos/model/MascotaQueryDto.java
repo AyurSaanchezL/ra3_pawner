@@ -2,7 +2,7 @@ package com.dam.accesodatos.model;
 
 public class MascotaQueryDto {
 
-    private String nombreMascota;
+    private String nombre;
     private String tipoMascota;
     private String sexo;
     private Integer limit;
@@ -14,19 +14,19 @@ public class MascotaQueryDto {
     }
 
     public MascotaQueryDto(String nombreMascota,String tipoMascota, String sexo, Integer limit, Integer offset) {
-        this.nombreMascota = nombreMascota;
+        this.nombre = nombreMascota;
         this.tipoMascota = tipoMascota;
         this.sexo = sexo;
         this.limit = limit != null ? limit : 10;
         this.offset = offset != null ? offset : 0;
     }
 
-    public String getNombreMascota() {
-        return nombreMascota;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setNombreMascota(String nombreMascota) {
-        this.nombreMascota = nombreMascota;
+    public void setNombre(String nombreMascota) {
+        this.nombre = nombreMascota;
     }
 
     public String getTipoMascota() {
@@ -64,7 +64,7 @@ public class MascotaQueryDto {
     @Override
     public String toString() {
         return "MascotaQueryDto{" +
-                "nombreMascota='" + nombreMascota + '\'' +        
+                "nombreMascota='" + nombre + '\'' +        
                 "tipoMascota='" + tipoMascota + '\'' +
                 ", sexo='" + sexo + '\'' +
                 ", limit=" + limit +

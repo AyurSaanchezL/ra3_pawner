@@ -283,8 +283,8 @@ public class HibernateMascotaServiceImpl implements HibernateMascotaService {
         */
 
         StringBuilder jpql = new StringBuilder("SELECT m FROM Mascota m WHERE 1=1");
-        if (queryDto.getNombreMascota() != null){
-            jpql.append("AND m.nombreMascota = :nombre");
+        if (queryDto.getNombre() != null){
+            jpql.append("AND m.nombre = :nombre");
         }
         if (queryDto.getTipoMascota() != null) {
             jpql.append(" AND m.tipoMascota = :tipo");
@@ -293,8 +293,8 @@ public class HibernateMascotaServiceImpl implements HibernateMascotaService {
             jpql.append(" AND m.sexo = :sexo");
         }
         TypedQuery<Mascota> query = entityManager.createQuery(jpql.toString(), Mascota.class);
-        if (queryDto.getNombreMascota() != null){
-            query.setParameter("nombre", queryDto.getNombreMascota());
+        if (queryDto.getNombre() != null){
+            query.setParameter("nombre", queryDto.getNombre());
         }
         if (queryDto.getTipoMascota() != null) {
             query.setParameter("tipo", queryDto.getTipoMascota());

@@ -1,10 +1,14 @@
 package com.dam.accesodatos.ra3;
 
-import com.dam.accesodatos.model.Mascota;
-import com.dam.accesodatos.model.MascotaCreateDto;
-import com.dam.accesodatos.model.MascotaQueryDto;
-import com.dam.accesodatos.model.MascotaUpdateDto;
-import com.dam.accesodatos.repository.MascotaRepository;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,25 +17,30 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.dam.accesodatos.model.Mascota;
+import com.dam.accesodatos.model.MascotaCreateDto;
+import com.dam.accesodatos.model.MascotaQueryDto;
+import com.dam.accesodatos.model.MascotaUpdateDto;
+import com.dam.accesodatos.repository.MascotaRepository;
 
 /**
- * Tests de integración para los métodos IMPLEMENTADOS de HibernateMascotaServiceImpl
+ * Tests de integración para los métodos IMPLEMENTADOS de
+ * HibernateMascotaServiceImpl
  *
- * @SpringBootTest carga el contexto completo de Spring con base de datos H2 real.
- * Estos tests validan que los métodos implementados funcionan correctamente end-to-end.
+ * @SpringBootTest carga el contexto completo de Spring con base de datos H2
+ *                 real.
+ *                 Estos tests validan que los métodos implementados funcionan
+ *                 correctamente end-to-end.
  *
- * COBERTURA: Tests que validan los métodos implementados:
- * 1. testEntityManager() - 1 test
- * 2. createMascota() + findMascotaByNumChip() + updateMascota() + deleteMascota() - 1 test de flujo completo
- * 3. findAll() - 1 test
- * 4. findMascotasByTipo() - 2 tests
- * 5. searchMascotas() - 3 tests
- * 6. executeCountByTipo() - 2 tests
- * 7. transferData() - 2 tests (transacción y rollback)
+ *                 COBERTURA: Tests que validan los métodos implementados:
+ *                 1. testEntityManager() - 1 test
+ *                 2. createMascota() + findMascotaByNumChip() + updateMascota()
+ *                 + deleteMascota() - 1 test de flujo completo
+ *                 3. findAll() - 1 test
+ *                 4. findMascotasByTipo() - 2 tests
+ *                 5. searchMascotas() - 4 tests
+ *                 6. executeCountByTipo() - 2 tests
+ *                 7. transferData() - 2 tests (transacción y rollback)
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -63,7 +72,7 @@ class HibernateMascotaServiceIntegrationTest {
         assertNotNull(result);
         assertTrue(result.contains("EntityManager activo"));
         assertTrue(result.length() > 20, "El resultado debe contener información de la BD");
-        
+
         System.out.println("✅ Test PASADO: " + result);
     }
 
@@ -73,7 +82,7 @@ class HibernateMascotaServiceIntegrationTest {
     @DisplayName("Flujo CRUD completo - Create, Read, Update, Delete")
     void crudFlow_CompleteLifecycle_Success() {
         System.out.println("\n🔄 Iniciando flujo CRUD completo...");
-        
+
         // 1. CREATE - Crear mascota con createMascota()
         MascotaCreateDto createDto = new MascotaCreateDto();
         createDto.setNumChip(1001);
@@ -87,7 +96,8 @@ class HibernateMascotaServiceIntegrationTest {
         assertNotNull(created.getNumChip());
         assertEquals("Max", created.getNombre());
         assertEquals("Perro", created.getTipoMascota());
-        System.out.println("   ✓ CREATE: Mascota creada - " + created.getNombre() + " (ID: " + created.getNumChip() + ")");
+        System.out.println(
+                "   ✓ CREATE: Mascota creada - " + created.getNombre() + " (ID: " + created.getNumChip() + ")");
 
         // 2. READ - Buscar mascota con findMascotaByNumChip()
         Mascota found = service.findMascotaByNumChip(created.getNumChip());
@@ -105,7 +115,8 @@ class HibernateMascotaServiceIntegrationTest {
         assertEquals("Maximus", updated.getNombre());
         assertEquals(6, updated.getEdad());
         assertEquals(created.getNumChip(), updated.getNumChip());
-        System.out.println("   ✓ UPDATE: Mascota actualizada - Nuevo nombre: " + updated.getNombre() + ", Nueva edad: " + updated.getEdad());
+        System.out.println("   ✓ UPDATE: Mascota actualizada - Nuevo nombre: " + updated.getNombre() + ", Nueva edad: "
+                + updated.getEdad());
 
         // 4. VERIFY - Verificar que los cambios persisten
         Mascota verified = service.findMascotaByNumChip(created.getNumChip());
@@ -122,7 +133,7 @@ class HibernateMascotaServiceIntegrationTest {
         Mascota notFound = service.findMascotaByNumChip(created.getNumChip());
         assertNull(notFound);
         System.out.println("   ✓ VERIFY DELETE: Confirmado que la mascota ya no existe");
-        
+
         System.out.println("✅ Test PASADO: Flujo CRUD completo exitoso\n");
     }
 
@@ -142,7 +153,7 @@ class HibernateMascotaServiceIntegrationTest {
         // Then
         assertNotNull(allMascotas);
         assertEquals(3, allMascotas.size());
-        
+
         System.out.println("✅ Test PASADO: Encontradas " + allMascotas.size() + " mascotas en total");
     }
 
@@ -167,7 +178,7 @@ class HibernateMascotaServiceIntegrationTest {
         assertTrue(perros.stream().allMatch(m -> "Perro".equals(m.getTipoMascota())));
         assertTrue(perros.stream().anyMatch(m -> "Max".equals(m.getNombre())));
         assertTrue(perros.stream().anyMatch(m -> "Rex".equals(m.getNombre())));
-        
+
         System.out.println("✅ Test PASADO: Encontrados " + perros.size() + " perros (Max, Rex) de 5 mascotas totales");
     }
 
@@ -183,11 +194,34 @@ class HibernateMascotaServiceIntegrationTest {
         // Then
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        
+
         System.out.println("✅ Test PASADO: No se encontraron 'Dinosaurio' - lista vacía correcta");
     }
 
     // ========== Tests de searchMascotas() ==========
+
+    @Test
+    @DisplayName("searchMascotas() - Búsqueda por nombre")
+    void searchMascotas_ByNombre_Success() {
+        // Given
+        createTestMascota(1001, "Guillermo", "Cabra", "Macho");
+        createTestMascota(1002, "Mariana", "Oveja", "Hembra");
+
+        MascotaQueryDto query = new MascotaQueryDto();
+        query.setNombre("Guillermo");
+
+        // When
+        List<Mascota> result = service.searchMascotas(query);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("Cabra", result.get(0).getTipoMascota());
+
+        System.out.println(
+                "✅ Test PASADO: Búsqueda dinámica por nombre 'Guillermo' - encontrado: "
+                        + result.get(0).getTipoMascota());
+    }
 
     @Test
     @DisplayName("searchMascotas() - Búsqueda por tipo")
@@ -206,8 +240,9 @@ class HibernateMascotaServiceIntegrationTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("Max", result.get(0).getNombre());
-        
-        System.out.println("✅ Test PASADO: Búsqueda dinámica por tipo 'Perro' - encontrado: " + result.get(0).getNombre());
+
+        System.out.println(
+                "✅ Test PASADO: Búsqueda dinámica por tipo 'Perro' - encontrado: " + result.get(0).getNombre());
     }
 
     @Test
@@ -228,19 +263,22 @@ class HibernateMascotaServiceIntegrationTest {
         assertNotNull(result);
         assertEquals(2, result.size());
         assertTrue(result.stream().allMatch(m -> "Macho".equals(m.getSexo())));
-        
-        System.out.println("✅ Test PASADO: Búsqueda dinámica por sexo 'Macho' - encontrados: " + result.size() + " (Max, Rex)");
+
+        System.out.println(
+                "✅ Test PASADO: Búsqueda dinámica por sexo 'Macho' - encontrados: " + result.size() + " (Max, Rex)");
     }
 
     @Test
-    @DisplayName("searchMascotas() - Búsqueda combinada tipo y sexo")
+    @DisplayName("searchMascotas() - Búsqueda combinada tipo, sexo y nombre")
     void searchMascotas_Combined_Success() {
         // Given
+        createTestMascota(1000, "Max", "Perro", "Macho");
         createTestMascota(1001, "Max", "Perro", "Macho");
         createTestMascota(1002, "Luna", "Gato", "Hembra");
         createTestMascota(1003, "Bella", "Perro", "Hembra");
 
         MascotaQueryDto query = new MascotaQueryDto();
+        query.setNombre("Max");
         query.setTipoMascota("Perro");
         query.setSexo("Macho");
 
@@ -249,10 +287,17 @@ class HibernateMascotaServiceIntegrationTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertEquals(2, result.size());
         assertEquals("Max", result.get(0).getNombre());
-        
-        System.out.println("✅ Test PASADO: Búsqueda combinada (tipo='Perro' Y sexo='Macho') - encontrado: " + result.get(0).getNombre());
+        assertEquals("Max", result.get(1).getNombre());
+
+        System.out
+                .println("✅ Test PASADO: Búsqueda combinada (nombre='Max', tipo='Perro' Y sexo='Macho') - resultados: "
+                        + result.size() + " - encontrados: ");
+
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println(result.get(i).toString());
+        }
     }
 
     // ========== Tests de executeCountByTipo() ==========
@@ -270,7 +315,7 @@ class HibernateMascotaServiceIntegrationTest {
 
         // Then
         assertEquals(2, count);
-        
+
         System.out.println("✅ Test PASADO: COUNT de tipo 'Perro' = " + count);
     }
 
@@ -285,7 +330,7 @@ class HibernateMascotaServiceIntegrationTest {
 
         // Then
         assertEquals(0, count);
-        
+
         System.out.println("✅ Test PASADO: COUNT de tipo 'Dinosaurio' = 0 (tipo inexistente)");
     }
 
@@ -324,8 +369,9 @@ class HibernateMascotaServiceIntegrationTest {
         // Then
         assertTrue(result);
         assertEquals(3, mascotaRepository.count());
-        
-        System.out.println("✅ Test PASADO: Transacción múltiple exitosa - 3 mascotas insertadas en una sola transacción");
+
+        System.out
+                .println("✅ Test PASADO: Transacción múltiple exitosa - 3 mascotas insertadas en una sola transacción");
     }
 
     @Test
@@ -353,11 +399,12 @@ class HibernateMascotaServiceIntegrationTest {
 
         // When & Then
         assertThrows(Exception.class, () -> service.transferData(mascotas));
-        
+
         // Verificar que el rollback funcionó - solo debe haber 1 mascota (la original)
         assertEquals(1, mascotaRepository.count());
-        
-        System.out.println("✅ Test PASADO: Rollback funcionó correctamente - BD mantiene solo 1 mascota tras error de duplicado");
+
+        System.out.println(
+                "✅ Test PASADO: Rollback funcionó correctamente - BD mantiene solo 1 mascota tras error de duplicado");
     }
 
     // ========== Tests de casos límite ==========
@@ -370,7 +417,7 @@ class HibernateMascotaServiceIntegrationTest {
 
         // Then
         assertNull(result);
-        
+
         System.out.println("✅ Test PASADO: Búsqueda con ID inexistente (9999) retorna null correctamente");
     }
 
@@ -385,7 +432,7 @@ class HibernateMascotaServiceIntegrationTest {
         assertThrows(RuntimeException.class, () -> {
             service.updateMascota(9999, updateDto);
         });
-        
+
         System.out.println("✅ Test PASADO: Update con ID inexistente (9999) lanza excepción correctamente");
     }
 
@@ -397,7 +444,7 @@ class HibernateMascotaServiceIntegrationTest {
 
         // Then
         assertFalse(result);
-        
+
         System.out.println("✅ Test PASADO: Delete con ID inexistente (9999) retorna false correctamente");
     }
 
