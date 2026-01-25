@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface MascotaRepository extends JpaRepository<Mascota, Integer> {
 
+    
     List<Mascota> findByTipoMascota(String tipoMascota);
 
     List<Mascota> findBySexo(String sexo);
