@@ -330,6 +330,29 @@ class HibernateMascotaServiceImplTest {
     // ========== Tests para searchMascotas() ==========
 
     @Test
+    @DisplayName("searchMascotas() - Búsqueda por nombre")
+    void searchMascotas_ByNombre() {
+        // Given
+        queryDto.setNombre("Max");
+        TypedQuery<Mascota> query = mock(TypedQuery.class);
+        List<Mascota> mascotas = Arrays.asList(testMascota);
+        when(entityManager.createQuery(anyString(), eq(Mascota.class))).thenReturn(query);
+        when(query.setParameter(anyString(), anyString())).thenReturn(query);
+        when(query.getResultList()).thenReturn(mascotas);
+
+        // When
+        List<Mascota> result = service.searchMascotas(queryDto);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(entityManager).createQuery(anyString(), eq(Mascota.class));
+        verify(query).setParameter("nombre", "Max");
+        verify(query).getResultList();
+
+        System.out.println("✅ Test PASADO: Búsqueda dinámica por nombre 'Max- " + result.size() + " resultado(s)");
+    }
+
+    @Test
     @DisplayName("searchMascotas() - Búsqueda por tipo")
     void searchMascotas_ByTipo() {
         // Given
@@ -378,9 +401,10 @@ class HibernateMascotaServiceImplTest {
     }
 
     @Test
-    @DisplayName("searchMascotas() - Búsqueda combinada tipo y sexo")
+    @DisplayName("searchMascotas() - Búsqueda combinada nombre, tipo y sexo")
     void searchMascotas_Combined() {
         // Given
+        queryDto.setNombre("Max");
         queryDto.setTipoMascota("Perro");
         queryDto.setSexo("Macho");
         TypedQuery<Mascota> query = mock(TypedQuery.class);
@@ -396,10 +420,10 @@ class HibernateMascotaServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(entityManager).createQuery(anyString(), eq(Mascota.class));
-        verify(query, times(2)).setParameter(anyString(), anyString());
+        verify(query, times(3)).setParameter(anyString(), anyString());
         verify(query).getResultList();
         
-        System.out.println("✅ Test PASADO: Búsqueda combinada (tipo='Perro' Y sexo='Macho') - " + result.size() + " resultado(s)");
+        System.out.println("✅ Test PASADO: Búsqueda combinada (nombre='Max', tipo='Perro' Y sexo='Macho') - " + result.size() + " resultado(s)");
     }
 
     // ========== Tests para executeCountByTipo() ==========
