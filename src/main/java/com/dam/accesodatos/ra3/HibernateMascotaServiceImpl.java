@@ -167,6 +167,9 @@ public class HibernateMascotaServiceImpl implements HibernateMascotaService {
         // Al finalizar, Spring hace commit e Hibernate ejecuta el UPDATE
     }
 
+    /*
+     * 🚨 PARA PRESENTAR 🚨
+     */
     @Override
     @Transactional
     public boolean deleteMascota(Integer numChip) {
@@ -247,6 +250,9 @@ public class HibernateMascotaServiceImpl implements HibernateMascotaService {
         return query.getResultList();
     }
 
+    /*
+     * 🚨 PARA PRESENTAR 🚨
+     */
     @Override
     public List<Mascota> searchMascotas(MascotaQueryDto queryDto) {
         /*
@@ -307,6 +313,9 @@ public class HibernateMascotaServiceImpl implements HibernateMascotaService {
 
     // ========== CE3.g: Transacciones ==========
 
+    /*
+     * 🚨 PARA PRESENTAR 🚨
+     */
     @Override
     @Transactional
     public boolean transferData(List<Mascota> mascotas) {
@@ -342,6 +351,9 @@ public class HibernateMascotaServiceImpl implements HibernateMascotaService {
         return true;
     }
 
+    /*
+     * 🚨 PARA PRESENTAR 🚨
+     */
     @Override
     public long executeCountByTipo(String tipo) {
         /*

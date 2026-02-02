@@ -1,0 +1,96 @@
+server:
+  port: 8083 # RA1=8081, RA2=8082, RA3=8083
+
+spring:
+  main:
+    web-application-type: servlet
+    banner-mode: off
+  application:
+    name: mcp-server-ra3-hibernate
+
+  # ===== CONFIGURACIÓN DE BASE DE DATOS H2 EMBEBIDA =====
+  # H2 es una base de datos en memoria/archivo perfecta para desarrollo
+  # No requiere instalación de servidor MySQL
+  datasource:
+    # Opción 1: Base de datos en MEMORIA (se borra al cerrar la aplicación)
+    # url: jdbc:h2:mem:pawner_db
+    
+    # Opción 2: Base de datos en ARCHIVO (persiste entre ejecuciones) - RECOMENDADO
+    url: jdbc:h2:file:./data/pawner_db;DB_CLOSE_ON_EXIT=FALSE
+    
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+    # Inicialización de BD con schema.sql y data.sql
+    initialization-mode: always
+    
+  sql:
+    init:
+      mode: always  # Ejecutar scripts SQL al iniciar
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: false  # Detener si hay errores en los scripts
+
+  # ===== CONFIGURACIÓN H2 CONSOLE (Interfaz web para ver la BD) =====
+  h2:
+    console:
+      enabled: true  # Habilitar consola web H2
+      path: /h2-console  # Acceder en: http://localhost:8083/h2-console
+      settings:
+        web-allow-others: true  # Permitir acceso desde otras IPs
+
+  # ===== CONFIGURACIÓN HIBERNATE (RA3 ESPECÍFICO) =====
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none  # IMPORTANTE: 'none' porque usamos schema.sql
+      # Opciones de ddl-auto:
+      # - none: No gestiona el schema (lo hacen schema.sql/data.sql)
+      # - validate: Valida que el schema coincida con las entidades
+      # - update: Actualiza el schema si es necesario
+      # - create: Crea el schema al iniciar (CUIDADO: borra datos)
+      # - create-drop: Crea al iniciar, borra al cerrar
+    show-sql: true  # Mostrar SQL generado por Hibernate
+    properties:
+      hibernate:
+        format_sql: true              # Formatear SQL en logs
+        use_sql_comments: true        # Mostrar comentarios de origen
+        highlight_sql: true           # Resaltar SQL en consola
+        generate_statistics: false    # Estadísticas de rendimiento (desactivado para más claridad)
+        jdbc:
+          batch_size: 20              # Tamaño de batch para operaciones
+        order_inserts: true           # Optimizar INSERTs
+        order_updates: true           # Optimizar UPDATEs
+
+  # Jackson JSON
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.dam.accesodatos: DEBUG
+    org.hibernate.SQL: DEBUG  # SQL queries
+    org.hibernate.orm.jdbc.bind: TRACE  # Valores de parámetros (Spring Boot 3+)
+    org.springframework.orm.jpa: DEBUG  # JPA operations
+    org.springframework.transaction: DEBUG  # Transacciones
+    org.springframework.jdbc.datasource.init: DEBUG  # Inicialización de scripts SQL
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# =====================================================
+# NOTAS IMPORTANTES:
+# =====================================================
+# 1. La base de datos se guarda en ./data/pawner_db.mv.db
+# 2. Puedes acceder a la consola H2 en: http://localhost:8083/h2-console
+#    - JDBC URL: jdbc:h2:file:./data/pawner_db
+#    - Usuario: sa
+#    - Password: (dejar vacío)
+# 3. Los datos se cargan automáticamente desde data.sql al iniciar
+# 4. Si quieres empezar desde cero, borra la carpeta ./data/
+# =====================================================
